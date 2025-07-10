@@ -1,0 +1,12 @@
+name = "iris-tutorial"
+version = "0.1.0"
+defaultTargets = ["IrisTutorial"]
+
+[[require]]
+name = "iris"
+scope = "leanprover-community"
+version = "git#master"
+
+[[lean_lib]]
+name = "IrisTutorial"
+
