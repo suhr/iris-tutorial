@@ -128,8 +128,8 @@ theorem asm (P: IProp σ): P ⊢ P := by
 -- [I] and bound to [iProp Σ]. Hence, you may need to wrap your
 -- propositions in [(_)%I] to use the notations.
 
--- Fail Definition and_fail (P Q : iProp Σ) := P ∧ Q.
--- Definition and_success (P Q : iProp Σ) := (P ∧ Q)%I.
+-- def and_fail (P Q : IProp σ) := P ∧ Q
+def and_success (P Q : IProp σ) := iprop(P ∧ Q)
 
 -- Iris uses ssreflect, but we will not assume knowledge of ssreflect
 -- tactics. As such we will limit the use of ssreflect tactics whenever
