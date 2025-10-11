@@ -5,8 +5,8 @@ defaultTargets = ["IrisTutorial"]
 [[require]]
 name = "iris"
 scope = "leanprover-community"
-version = "git#master"
+git = "https://github.com/suhr/iris-lean.git"
+rev = "604ff66378e2f179487d60efef6486dfca23ebd1"
 
 [[lean_lib]]
 name = "IrisTutorial"
-

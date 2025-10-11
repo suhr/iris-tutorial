@@ -194,7 +194,112 @@ theorem sep_comm (P Q: IProp σ): P ∗ Q ⊢ Q ∗ P := by
 theorem modus_ponens (P Q: IProp σ): ⊢ P -∗ (P -∗ Q) -∗ Q := by
   -- exercise
   iintro hp pq
-  -- iris-lean lacks iapply
+  iapply pq
+  iexact hp
+
+-- Just as with Coq tactics, Iris allows nesting of introduction
+-- patterns. In fact, like Coq, Iris supports patterns of the form
+-- [(H1 & .. & H2 & H3)] as a shorthand for [[H1 .. [H2 H3] ..]].
+--
+-- Exercise: try to use an introduction with a pattern of parentheses to
+-- prove associativity for [∗]. Note that [∗] is right-associative, so
+-- [P ∗ Q ∗ R] is parsed as [P ∗ (Q ∗ R)].
+theorem sep_assoc_1 (P Q R : IProp σ) : P ∗ Q ∗ R ⊢ (P ∗ Q) ∗ R := by
+  iintro ⟨hp, hq, hr⟩
+  isplit r [hr]
+  · isplit l [hp]
+    iexact hp
+    iexact hq
+  · iexact hr
+
+
+-- Manually splitting a separation can become tedious. To alleviate this,
+-- we can use the [iFrame] tactic. This tactic pairs up hypotheses with
+-- pieces of a separation sequence. Its full use is described in
+--
+-- <<https://gitlab.mpi-sws.org/iris/iris/-/blob/master/docs/proof_mode.md?ref_type=heads#separation-logic-specific-tactics>>
+theorem sep_comm_v2 (P Q : IProp σ) : P ∗ Q ⊢ Q ∗ P := by
+  iintro ⟨hp, hq⟩
+  -- iris-lean does not support iFrame
+  isplit l [hq]
+  iexact hq
+  iexact hp
+
+
+-- Bi-entailment of Iris propositions is denoted [P ⊣⊢ Q]. It is an
+-- equivalence relation, and most connectives preserve this relation. It
+-- is encoded using the setoid library with the typeclass [Proper]. It is
+-- therefore possible to use the [rewrite] tactic inside the Iris Proof
+-- Mode. Bi-entailment is defined as [(P -∗ Q) ∧ (Q -∗ P)], so it can be
+-- decomposed using the [iSplit] tactic.
+--
+-- For hypotheses with multiple curried wands, it is necessary to specify
+-- how to split the Iris context during application. This can be done as
+-- [iApply ("H" with "[H1 H2 H3] [H4 H5]")]. Each set of square brackets
+-- specifies the part of the context going to that argument. Let us
+-- consider a specific example.
+theorem wand_adj_1 (P Q R : IProp σ) : (P -∗ Q -∗ R) ∗ P ∗ Q ⊢ R := by
+  iintro ⟨h, hp, hq⟩
+  -- When applying ["H"], we get the subgoals [P] and [Q]. To specify that
+  -- we want to use ["HP"] to prove the first subgoal, and ["HQ"] the second,
+  -- we add ["HP"] in the first square bracket, and ["HQ"] in the second.
+  iapply h with hp, hq
+
+-- Hypotheses that fit arguments exactly can be supplied directly without
+-- a square bracket to avoid trivial subgoals, as in the above. Try this
+-- in the following exercise
+theorem wand_adj (P Q R : IProp σ) : (P -∗ Q -∗ R) ⊣⊢ (P ∗ Q -∗ R) := by
+  -- isplit does not work for ⊣⊢
   sorry
+
+-- Disjunctions [∨] are treated just like disjunctions in Coq. The
+-- introduction pattern [[ _ | _ ]] allows us to eliminate a disjunction,
+-- while the tactics [iLeft] and [iRight] let us introduce them.
+--
+-- Prove that disjunction commutes.
+theorem iris_or_comm (P Q : IProp σ) : Q ∨ P ⊢ P ∨ Q := by
+  iintro h
+  icases h with (hq | hp)
+  · iright
+    iexact hq
+  · ileft
+    iexact hp
+
+-- We can even prove the usual elimination rule for or-elimination
+-- written with separation. This version is, however, not very useful, as
+-- it does not allow the two cases to share resources.
+theorem or_elim (P Q R : IProp σ) : ⊢ (P -∗ R) -∗ (Q -∗ R) -∗ P ∨ Q -∗ R := by
+  iintro pr qr pq
+  icases pq with (hp | hq)
+  · iapply pr
+    iexact hp
+  · iapply qr
+    iexact hq
+
+-- Separating conjunction distributes over disjunction (for the same
+-- reason as ordinary conjunction).
+theorem sep_or_distr (P Q R : IProp σ) : P ∗ (Q ∨ R) ⊣⊢ P ∗ Q ∨ P ∗ R := by
+  sorry
+
+-- Iris has existential and universal quantifiers over any Coq type.
+-- Existential quantifiers are proved using the [iExists] tactic, using
+-- the same syntax as for [exists]. Elimination of existentials is done
+-- through the pattern "[%_ _]" or as part of a "(_&..&_)" with a %
+-- in front of the existential variable.
+theorem sep_ex_distr {A} (P : IProp σ) (Φ : A → IProp σ) :
+    (P ∗ ∃ x, Φ x) ⊣⊢ ∃ x, P ∗ Φ x := by
+  sorry
+
+-- Likewise, forall quantification works almost as in Coq. To introduce
+-- universally quantified variables, you can either use [iIntros (x y z)]
+-- or [iIntros "%x %y %z"]. These patterns are interchangeable. To
+-- specify the parameters of hypotheses, we write
+-- [iApply ("H" $! x y z)].
+theorem sep_all_distr {A} (P Q : A → IProp σ) :
+    ⊢ (∀ x, P x) ∗ (∀ x, Q x) -∗ (∀ x, P x ∗ Q x) := by
+  iintro ⟨axp, axq⟩ x
+  isplit l [axp]
+  · iapply axp
+  · iapply axq
 
 end proofs
