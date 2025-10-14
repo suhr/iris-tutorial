@@ -176,7 +176,7 @@ theorem sep_comm (P Q: IProp σ): P ∗ Q ⊢ Q ∗ P := by
   -- prove each subgoal. The hypotheses mentioned by [iSplitL] are given
   -- to the left subgoal, and the remaining to the right. Conversely for
   -- [iSplitR].
-  isplit l [hq]
+  isplitl [hq]
   · iexact hq
   · iexact hp
 
@@ -206,8 +206,8 @@ theorem modus_ponens (P Q: IProp σ): ⊢ P -∗ (P -∗ Q) -∗ Q := by
 -- [P ∗ Q ∗ R] is parsed as [P ∗ (Q ∗ R)].
 theorem sep_assoc_1 (P Q R : IProp σ) : P ∗ Q ∗ R ⊢ (P ∗ Q) ∗ R := by
   iintro ⟨hp, hq, hr⟩
-  isplit r [hr]
-  · isplit l [hp]
+  isplitr [hr]
+  · isplitl [hp]
     iexact hp
     iexact hq
   · iexact hr
@@ -221,7 +221,7 @@ theorem sep_assoc_1 (P Q R : IProp σ) : P ∗ Q ∗ R ⊢ (P ∗ Q) ∗ R := by
 theorem sep_comm_v2 (P Q : IProp σ) : P ∗ Q ⊢ Q ∗ P := by
   iintro ⟨hp, hq⟩
   -- iris-lean does not support iFrame
-  isplit l [hq]
+  isplitl [hq]
   iexact hq
   iexact hp
 
@@ -298,7 +298,7 @@ theorem sep_ex_distr {A} (P : IProp σ) (Φ : A → IProp σ) :
 theorem sep_all_distr {A} (P Q : A → IProp σ) :
     ⊢ (∀ x, P x) ∗ (∀ x, Q x) -∗ (∀ x, P x ∗ Q x) := by
   iintro ⟨axp, axq⟩ x
-  isplit l [axp]
+  isplitl [axp]
   · iapply axp
   · iapply axq
 
