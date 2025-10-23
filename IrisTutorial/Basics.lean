@@ -250,7 +250,11 @@ theorem wand_adj_1 (P Q R : IProp σ) : (P -∗ Q -∗ R) ∗ P ∗ Q ⊢ R := b
 -- in the following exercise
 theorem wand_adj (P Q R : IProp σ) : (P -∗ Q -∗ R) ⊣⊢ (P ∗ Q -∗ R) := by
   -- isplit does not work for ⊣⊢
-  sorry
+  constructor
+  · iintro pqr ⟨p, q⟩
+    iapply pqr with p, q
+  · iintro pqr p q
+    iapply pqr with p, q
 
 -- Disjunctions [∨] are treated just like disjunctions in Coq. The
 -- introduction pattern [[ _ | _ ]] allows us to eliminate a disjunction,
@@ -279,7 +283,27 @@ theorem or_elim (P Q R : IProp σ) : ⊢ (P -∗ R) -∗ (Q -∗ R) -∗ P ∨ Q
 -- Separating conjunction distributes over disjunction (for the same
 -- reason as ordinary conjunction).
 theorem sep_or_distr (P Q R : IProp σ) : P ∗ (Q ∨ R) ⊣⊢ P ∗ Q ∨ P ∗ R := by
-  sorry
+  constructor
+  · iintro ⟨p, qr⟩
+    icases qr with (q | r)
+    · ileft
+      isplitl [p]
+      · iexact p
+      · iexact q
+    · iright
+      isplitl [p]
+      · iexact p
+      · iexact r
+  · iintro pqpr
+    icases pqpr with (⟨p, q⟩ | ⟨p, r⟩)
+    · isplitl [p]
+      · iexact p
+      · ileft
+        iexact q
+    · isplitl [p]
+      · iexact p
+      · iright
+        iexact r
 
 -- Iris has existential and universal quantifiers over any Coq type.
 -- Existential quantifiers are proved using the [iExists] tactic, using
@@ -288,7 +312,17 @@ theorem sep_or_distr (P Q R : IProp σ) : P ∗ (Q ∨ R) ⊣⊢ P ∗ Q ∨ P �
 -- in front of the existential variable.
 theorem sep_ex_distr {A} (P : IProp σ) (Φ : A → IProp σ) :
     (P ∗ ∃ x, Φ x) ⊣⊢ ∃ x, P ∗ Φ x := by
-  sorry
+  constructor
+  · iintro ⟨hp, x, fx⟩
+    iexists x
+    isplitl [hp]
+    · iexact hp
+    · iexact fx
+  · iintro ⟨x, hp, fx⟩
+    isplitl [hp]
+    · iexact hp
+    · iexists x
+      iexact fx
 
 -- Likewise, forall quantification works almost as in Coq. To introduce
 -- universally quantified variables, you can either use [iIntros (x y z)]
