@@ -5,7 +5,7 @@ import Iris.ProofMode
 open Iris
 
 section proofs
-variable (σ : GFunctors) [IG : IsGFunctors σ]
+variable (σ : BundledGFunctors)
 
 -- # Pure Propositions
 --
@@ -36,7 +36,7 @@ theorem eq_5_5 : ⊢ (⌜5 = 5⌝ : IProp σ) := by
 -- ["%_"]. This adds the proposition to the non-spatial context as a Coq
 -- proposition.
 theorem eq_elm {A} (P : A → IProp σ) (x y : A) : ⊢ (⌜x = y⌝ : IProp σ) -∗ P x -∗ P y := by
-  iintro ⌜φ⌝ px
+  iintro %φ px
   rw [φ]
   iexact px
 
@@ -87,7 +87,7 @@ theorem pure_adj1 (φ : Prop) : φ → ⊢ (⌜φ⌝ : IProp σ) := by
   exact h
 
 theorem pure_adj2 (P : IProp σ) : ⊢ ⌜⊢ P⌝ -∗ P := by
-  iintro ⌜h⌝
+  iintro %h
   exact h
 
 end proofs
