@@ -29,7 +29,7 @@ theorem asm_pure (φ : Prop) : ⌜φ⌝ ⊢ (⌜φ⌝ : IProp σ) := by
 -- Iris Proof Mode, throwing away the spatial context and turns the
 -- proposition into a Coq proposition.
 theorem eq_5_5 : ⊢ (⌜5 = 5⌝ : IProp σ) := by
-  ipure_intro
+  ipureintro
   rfl
 
 -- To eliminate a pure proposition, we can use the specialization pattern
@@ -49,28 +49,28 @@ theorem eq_elm {A} (P : A → IProp σ) (x y : A) : ⊢ (⌜x = y⌝ : IProp σ)
 
 -- [True] is pure.
 theorem true_intro : ⊢ (True : IProp σ) := by
-  ipure_intro
+  ipureintro
   constructor
 
 -- Conjunction preserves pureness.
 theorem and_pure : ⊢ ⌜5 = 5⌝ ∧ (⌜8 = 8⌝ : IProp σ) := by
-  ipure_intro
+  ipureintro
   exact ⟨rfl, rfl⟩
 
 -- (** Separating conjunction preserves pureness. *)
 theorem sep_pure : ⊢ ⌜5 = 5⌝ ∗ (⌜8 = 8⌝ : IProp σ) := by
-  ipure_intro
+  ipureintro
   exact ⟨rfl, rfl⟩
 
 -- Wand preserves pureness.
 theorem wand_pure {A} (x y : A) : ⊢ ⌜x = y⌝ -∗ (⌜y = x⌝: IProp σ) := by
-  ipure_intro
+  ipureintro
   exact Eq.symm
 
 -- Arbitrary Iris propositions are not pure.
 theorem abstr_not_pure (P : IProp σ) : ⊢ P -∗ ⌜8 = 8⌝ := by
   iintro p
-  ipure_intro
+  ipureintro
   rfl
 
 -- The pure embedding allows us to state an important property, namely
@@ -83,7 +83,7 @@ theorem abstr_not_pure (P : IProp σ) : ⊢ P -∗ ⌜8 = 8⌝ := by
 -- inverses, but they are related.
 theorem pure_adj1 (φ : Prop) : φ → ⊢ (⌜φ⌝ : IProp σ) := by
   intro h
-  ipure_intro
+  ipureintro
   exact h
 
 theorem pure_adj2 (P : IProp σ) : ⊢ ⌜⊢ P⌝ -∗ P := by
