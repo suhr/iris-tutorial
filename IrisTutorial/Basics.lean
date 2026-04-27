@@ -62,7 +62,7 @@ open Iris
 
 section proofs
 
-variable (σ : GFunctors) [IG : IsGFunctors σ]
+variable (σ : BundledGFunctors)
 
 -- Iris defines two Coq propositions for proving Iris propositions:
 -- - [⊢ P] asks whether [P] holds with no assumptions
@@ -243,7 +243,7 @@ theorem wand_adj_1 (P Q R : IProp σ) : (P -∗ Q -∗ R) ∗ P ∗ Q ⊢ R := b
   -- When applying ["H"], we get the subgoals [P] and [Q]. To specify that
   -- we want to use ["HP"] to prove the first subgoal, and ["HQ"] the second,
   -- we add ["HP"] in the first square bracket, and ["HQ"] in the second.
-  iapply h with hp, hq
+  iapply h $$ hp hq
 
 -- Hypotheses that fit arguments exactly can be supplied directly without
 -- a square bracket to avoid trivial subgoals, as in the above. Try this
@@ -252,9 +252,12 @@ theorem wand_adj (P Q R : IProp σ) : (P -∗ Q -∗ R) ⊣⊢ (P ∗ Q -∗ R) 
   -- isplit does not work for ⊣⊢
   constructor
   · iintro pqr ⟨p, q⟩
-    iapply pqr with p, q
+    iapply pqr $$ p q
   · iintro pqr p q
-    iapply pqr with p, q
+    iapply pqr
+    isplitl [p]
+    · iexact p
+    · iexact q
 
 -- Disjunctions [∨] are treated just like disjunctions in Coq. The
 -- introduction pattern [[ _ | _ ]] allows us to eliminate a disjunction,
@@ -313,12 +316,12 @@ theorem sep_or_distr (P Q R : IProp σ) : P ∗ (Q ∨ R) ⊣⊢ P ∗ Q ∨ P �
 theorem sep_ex_distr {A} (P : IProp σ) (Φ : A → IProp σ) :
     (P ∗ ∃ x, Φ x) ⊣⊢ ∃ x, P ∗ Φ x := by
   constructor
-  · iintro ⟨hp, x, fx⟩
+  · iintro ⟨hp, %x, fx⟩
     iexists x
     isplitl [hp]
     · iexact hp
     · iexact fx
-  · iintro ⟨x, hp, fx⟩
+  · iintro ⟨%x, hp, fx⟩
     isplitl [hp]
     · iexact hp
     · iexists x
@@ -331,7 +334,7 @@ theorem sep_ex_distr {A} (P : IProp σ) (Φ : A → IProp σ) :
 -- [iApply ("H" $! x y z)].
 theorem sep_all_distr {A} (P Q : A → IProp σ) :
     ⊢ (∀ x, P x) ∗ (∀ x, Q x) -∗ (∀ x, P x ∗ Q x) := by
-  iintro ⟨axp, axq⟩ x
+  iintro ⟨axp, axq⟩ %x
   isplitl [axp]
   · iapply axp
   · iapply axq

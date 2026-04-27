@@ -4,8 +4,9 @@ defaultTargets = ["IrisTutorial"]
 
 [[require]]
 name = "iris"
-git = "https://github.com/leanprover-community/iris-lean.git"
-rev = "unstable"
+git.url = "https://github.com/leanprover-community/iris-lean.git"
+git.subDir = "Iris" 
+rev = "master"
 
 [[lean_lib]]
 name = "IrisTutorial"
