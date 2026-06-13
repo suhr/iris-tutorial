@@ -2,6 +2,7 @@ import Iris.Algebra.IProp
 import Iris.Instances.UPred
 import Iris.ProofMode
 
+namespace Basics
 open Iris
 
 -- # Basics of Iris
@@ -220,11 +221,7 @@ theorem sep_assoc_1 (P Q R : IProp σ) : P ∗ Q ∗ R ⊢ (P ∗ Q) ∗ R := by
 -- <<https://gitlab.mpi-sws.org/iris/iris/-/blob/master/docs/proof_mode.md?ref_type=heads#separation-logic-specific-tactics>>
 theorem sep_comm_v2 (P Q : IProp σ) : P ∗ Q ⊢ Q ∗ P := by
   iintro ⟨hp, hq⟩
-  -- iris-lean does not support iFrame
-  isplitl [hq]
-  iexact hq
-  iexact hp
-
+  iframe
 
 -- Bi-entailment of Iris propositions is denoted [P ⊣⊢ Q]. It is an
 -- equivalence relation, and most connectives preserve this relation. It
@@ -255,9 +252,7 @@ theorem wand_adj (P Q R : IProp σ) : (P -∗ Q -∗ R) ⊣⊢ (P ∗ Q -∗ R) 
     iapply pqr $$ p q
   · iintro pqr p q
     iapply pqr
-    isplitl [p]
-    · iexact p
-    · iexact q
+    iframe
 
 -- Disjunctions [∨] are treated just like disjunctions in Coq. The
 -- introduction pattern [[ _ | _ ]] allows us to eliminate a disjunction,
@@ -290,23 +285,13 @@ theorem sep_or_distr (P Q R : IProp σ) : P ∗ (Q ∨ R) ⊣⊢ P ∗ Q ∨ P �
   · iintro ⟨p, qr⟩
     icases qr with (q | r)
     · ileft
-      isplitl [p]
-      · iexact p
-      · iexact q
+      iframe
     · iright
-      isplitl [p]
-      · iexact p
-      · iexact r
+      iframe
   · iintro pqpr
     icases pqpr with (⟨p, q⟩ | ⟨p, r⟩)
-    · isplitl [p]
-      · iexact p
-      · ileft
-        iexact q
-    · isplitl [p]
-      · iexact p
-      · iright
-        iexact r
+    · iframe
+    · iframe
 
 -- Iris has existential and universal quantifiers over any Coq type.
 -- Existential quantifiers are proved using the [iExists] tactic, using
@@ -318,9 +303,7 @@ theorem sep_ex_distr {A} (P : IProp σ) (Φ : A → IProp σ) :
   constructor
   · iintro ⟨hp, %x, fx⟩
     iexists x
-    isplitl [hp]
-    · iexact hp
-    · iexact fx
+    iframe
   · iintro ⟨%x, hp, fx⟩
     isplitl [hp]
     · iexact hp

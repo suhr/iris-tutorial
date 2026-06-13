@@ -2,6 +2,7 @@ import Iris.Algebra.IProp
 import Iris.Instances.UPred
 import Iris.ProofMode
 
+namespace Pure
 open Iris
 
 section proofs

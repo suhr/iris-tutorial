@@ -2,6 +2,9 @@ import Iris.HeapLang
 import Iris.HeapLang.Lib.Spawn
 import Iris.HeapLang.Lib.Par
 
+namespace Lang
+open Iris HeapLang Spawn Par
+
 -- # HeapLang
 
 -- ## Introduction
@@ -49,15 +52,12 @@ import Iris.HeapLang.Lib.Par
 
 -- ## Pure Constructs
 
-open Iris
-open HeapLang Spawn Par
-
 section heaplang
 
 -- HeapLang has native support for integers and booleans. With these, we
 -- can do basic arithmetic and control flow.
 -- Note that values in HeapLang are prefixed by a [#].
-def arith : Exp := hl(#1 + #2 * #3)
+def arith : Exp := hl% #1 + #2 * #3
 
 -- If the interpreter was installed, the expression can now be executed
 -- using [(exec 10 arith)], where [10] is the amount of fuel. To evaluate
@@ -67,12 +67,12 @@ def arith : Exp := hl(#1 + #2 * #3)
 -- Compute (exec 10 arith).
 -- * Evaluates to [inl #7]
 
-def booleans : Exp := hl((&arith = #7) && #true || (#true = #false))
+def booleans : Exp := hl% (&arith = #7) && #true || (#true = #false)
 
 -- Compute (exec 10 booleans).
 -- * Evaluates to [inl #true]
 
-def if_then_else : Exp := hl(if &booleans then #() else #false)
+def if_then_else : Exp := hl% if &booleans then #() else #false
 
 -- Compute (exec 10 if_then_else).
 -- * Evaluates to [inl #()]
@@ -82,10 +82,10 @@ def if_then_else : Exp := hl(if &booleans then #() else #false)
 -- package, which defines them in terms of lambda abstractions.
 -- Note that variables in HeapLang are strings.
 
-def lets : Exp := hl(
+def lets : Exp := hl%
   let a := #4;
   let b := #2;
-  a + b )
+  a + b
 
 -- Compute (exec 10 lets).
 -- * Evaluates to [inl #6]
@@ -93,17 +93,17 @@ def lets : Exp := hl(
 -- HeapLang has native support for pairs, with tuples being notation for
 -- nested pairs.
 
-def pairs : Exp := hl(
+def pairs : Exp := hl%
   let p := (#40, #1 + #1);
-  fst(p) + snd(p) )
+  fst(p) + snd(p)
 
 -- Compute (exec 10 pairs).
 -- * Evaluates to [inl #42]
 
-def tuples : Exp := hl(
+def tuples : Exp := hl%
   let t1 := (#1, #2, #3, #4);
   let t2 := (((#1, #2), #3), #4);
-  snd(fst(fst(t1))) = snd(fst(fst(t2))) )
+  snd(fst(fst(t1))) = snd(fst(fst(t2)))
 
 -- Compute (exec 10 tuples).
 -- * Evaluates to [inl #true]
@@ -112,20 +112,20 @@ def tuples : Exp := hl(
 -- is the `option' construction. The [notation] package has us covered
 -- here as well.
 
-def sums : Exp := hl(
+def sums : Exp := hl%
   let r := injr(#1);
   match r with
   | injl(n) => #0
-  | injr(n) => n + #1)
+  | injr(n) => n + #1
 
 -- Compute (exec 10 sums).
 -- * Evaluates to [inl #2]
 
-def option : Exp := hl(
+def option : Exp := hl%
   let r := some(#1);
   match r with
   | none() => #0
-  | some(n) => n + #1)
+  | some(n) => n + #1
 
 -- Compute (exec 10 option).
 -- * Evaluates to [inl #2]
@@ -136,19 +136,19 @@ def option : Exp := hl(
 -- functions are first-class citizens, which gives support for
 -- higher-order functions.
 
-def lambda : Exp := hl(
+def lambda : Exp := hl%
   let add5 := (λ x, x + #5);
   let double := (λ x, x * #2);
   let compose := (λ f g, (λ x, g (f x)));
-  (compose add5 double) #5)
+  (compose add5 double) #5
 
 -- Compute (exec 10 lambda).
 -- * Evaluates to [inl #20]
 
-def recursion : Exp := hl(
+def recursion : Exp := hl%
   let fac :=
     (rec f n := if n = #0 then #1 else n * f (n - #1));
-  (fac #4, fac #5))
+  (fac #4, fac #5)
 
 -- Compute (exec 25 recursion).
 -- * Evaluates to [inl (#24, #120)]
@@ -159,10 +159,10 @@ def recursion : Exp := hl(
 -- Given a value, [ref] finds a fresh location on the heap and stores the
 -- value there. The location is then returned.
 
-def alloc : Exp := hl(
+def alloc : Exp := hl%
   let l1 := ref(#0);
   let l2 := ref(#0);
-  (l1, l2))
+  (l1, l2)
 
 -- Compute (exec 10 alloc).
 -- * Evaluates to [inl (#(Loc 1), #(Loc 2))]
@@ -170,17 +170,17 @@ def alloc : Exp := hl(
 -- After allocation, we can read and update the value at the returned
 -- location [l] with [!l] and [l <- v], respectively.
 
-def load : Exp := hl(
+def load : Exp := hl%
   let l := ref(#5);
-  !l)
+  !l
 
 -- Compute (exec 10 load).
 -- * Evaluates to [inl #5]
 
-def store : Exp := hl(
+def store : Exp := hl%
   let l := ref(#5);
   l ← #6 ;
-  !l)
+  !l
 
 -- Compute (exec 10 store).
 -- * Evaluates to [inl #6]
@@ -193,16 +193,16 @@ def store : Exp := hl(
 -- with [v] being the original value stored at [l], and [b] a boolean
 -- indicating whether the location was updated.
 
-def cmpxchg_fail : Exp := hl(
+def cmpxchg_fail : Exp := hl%
   let l := ref(#5);
-  cmpXchg(l, #6, #7))
+  cmpXchg(l, #6, #7)
 
 -- Compute (exec 10 cmpxchg_fail).
 -- * Evaluates to [inl (#5, #false)]
 
-def cmpxchg_suc : Exp := hl(
+def cmpxchg_suc : Exp := hl%
   let l := ref(#5);
-  cmpXchg(l, #5, #7))
+  cmpXchg(l, #5, #7)
 
 -- Compute (exec 10 cmpxchg_suc).
 -- * Evaluates to [inl (#5, #true)]
@@ -211,7 +211,7 @@ def cmpxchg_suc : Exp := hl(
 -- compare-and-set, written [CAS l v1 v2]. The only difference is that
 -- [CAS] only returns the boolean [b].
 
-def cas : Exp := hl(
+def cas : Exp := hl%
   let l := ref(#5);
   if cas(l, #6, #7) then
     #()
@@ -221,7 +221,7 @@ def cas : Exp := hl(
       let b := !l;
       (a, b)
     else
-      #())
+      #()
 
 -- Compute (exec 10 cas).
 -- * Evaluates to [inl (#5, #7)]
@@ -234,10 +234,10 @@ def cas : Exp := hl(
 -- of [e] terminates, then the resulting value is simply thrown away.
 -- Hence, [e] is only run for its side effects.
 
-def fork : Exp := hl(
+def fork : Exp := hl%
   let l := ref(#5);
   fork(l ← #7);
-  !l)
+  !l
 
 -- Unfortunately, in its current state, the HeapLang interpreter does not
 -- support concurrency; the forked thread never executes its expression.
@@ -259,12 +259,12 @@ def fork : Exp := hl(
 -- which we can use in conjunction with [join] to wait for the result of
 -- the computation.
 
-example : Exp := hl(
+example : Exp := hl%
   let l := ref(#5);
   let handle := &spawn (λ _, l ← #6; #2);
   let res := &join handle;
   let v := !l;
-  (res, v))
+  (res, v)
 
 -- * Evaluates to [(2, 6)].
 
@@ -274,10 +274,10 @@ example : Exp := hl(
 -- expressions have terminated, the resulting values are returned in a
 -- pair.
 
-def par : Exp := hl(
+def par : Exp := hl%
   let l := ref(#5);
   let res := (!l + #1) ‖ (!l + #2);
-  fst(res) + snd(res) )
+  fst(res) + snd(res)
 
 -- * Evaluates to [13].
 
