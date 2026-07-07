@@ -4,3 +4,4 @@ import IrisTutorial.Basics
 import IrisTutorial.Pure
 import IrisTutorial.Lang
 import IrisTutorial.Specifications
+import IrisTutorial.Persistently
