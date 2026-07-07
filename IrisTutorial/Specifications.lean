@@ -1,12 +1,8 @@
 import Iris.HeapLang
--- import Iris.HeapLang.Lib.Spawn
 import Iris.HeapLang.Lib.Par
-import Iris.HeapLang.PrimitiveLaws
-import Iris.HeapLang.ProofMode
-import Iris.Algebra.DFrac
 
 namespace Specifications
-open Iris HeapLang Par
+open Iris HeapLang Par Spawn
 
 -- # Specifications
 --
@@ -56,7 +52,7 @@ theorem arith_spec : ⊢@{IProp GF} WP arith {{ v, ⌜v = hl_val(#16)⌝}} := by
   -- by [proofmode]. The initial step of the program is to multiply [#2]
   -- by [#3]. The tactic [wp_op] symbolically executes this expression
   -- using the underlying rules of the logic.
-  wp_pure  -- PORTING: Iris-Lean does not support wp_op
+  wp_op
   -- Note that the expression [#2 * #3] turned into [#(2 * 3)] – the Coq
   -- expression [2 * 3] is treated as a value in HeapLang.
   --
@@ -177,31 +173,24 @@ theorem prog_spec : ⊢@{IProp GF} WP prog {{ v, ⌜v = hl_val(#3)⌝ }} := by
   -- existence of some location [l] which points-to [1], [l ↦ #1]. The
   -- [wp_alloc] tactic requires that we give names to the location and the
   -- proposition.
-  wp_bind ref(_)
-  iapply wp_alloc
-  iintro !> %l Hl
+  wp_alloc l with Hl
   -- The next step of [prog] is a let expression which we symbolically
   -- execute with [wp_let].
-  wp_pures
+  wp_let
   -- Next, we load from location [l]. Loading from a location requires
   -- the associated points-to predicate in the context. The predicate
   -- then governs the result of the load. Since we have [Hl], we can
   -- perform the load using the [wp_load] tactic.
-  wp_bind !#l
-  iapply wp_load $$ [$]
-  iintro !> Hl
+  wp_load
   -- Then we evaluate the addition.
   wp_pures
   -- Storing is handled by [wp_store]. As with loading, we must have the
   -- associated points-to predicate in the context. [wp_store] updates
   -- the points-to predicate to reflect the store.
-  wp_bind #l ← _
-  iapply wp_store $$ [$]
-  iintro !> Hl
+  wp_store
   wp_pures
   -- Finally, we use [wp_load] again.
-  iapply wp_load $$ [$]
-  iintro !> Hl
+  wp_load
   -- Now we are left with a trivial proof that [1 + 2 = 3]
   ipureintro
   rfl
@@ -223,20 +212,24 @@ theorem prog_spec : ⊢@{IProp GF} WP prog {{ v, ⌜v = hl_val(#3)⌝ }} := by
 
 def cmpXchg_0_to_10 (l : Loc) : Exp := hl(cmpXchg(#l, #0, #10))
 
--- PORTING: Iris-lean does not support `wp_cmpxchg` yet
--- theorem cmpXchg_0_to_10_spec (l : Loc) (v : Val) :
---   l ↦ v -∗
---   WP (cmpXchg_0_to_10 l) {{ u, (⌜v = hl_val(#0)⌝ ∗ l ↦ hl_val(#10)) ∨
---                                (⌜v ≠ hl_val(#0)⌝ ∗ l ↦ v) }} := by
---   iIntros "Hl".
---   wp_cmpxchg as H1 | H2.
---   -- CmpXchg succeeded
---     iLeft.
---     by iFrame.
---   -- CmpXchg failed
---     iRight.
---     by iFrame.
---  sorry
+theorem cmpXchg_0_to_10_spec (l : Loc) (v : Val) :
+  l ↦ v -∗
+  WP (cmpXchg_0_to_10 l) {{ _u, (⌜v = hl_val(#0)⌝ ∗ l ↦ hl_val(#10)) ∨
+                                (⌜v ≠ hl_val(#0)⌝ ∗ l ↦ v) }} := by
+  unfold cmpXchg_0_to_10
+  iintro Hl
+  wp_cmpxchg with ha hb
+  · have : hl_val(#0).isUnboxed := rfl
+    simp [Val.compareSafe, this]
+  · rw [ha]
+    imodintro
+    ileft
+    iframe
+    itrivial
+  · imodintro
+    iright
+    iframe
+    itrivial
 
 -- If it is clear that a [CmpXchg] instruction will succeed, then we can
 -- apply the [wp_cmpxchg_suc] tactic which will immediately discharge the
@@ -263,15 +256,17 @@ def cas : Exp := hl%
 -- [Snd (CmpXchg l v1 v2)]).
 -- Exercise: finish the proof of the specification for [cas].
 
--- theorem cas_spec : ⊢@{IProp GF} WP cas {{ v, ⌜v = hl_val((#5, #7)) ⌝ }} := by
---   rewrite /cas.
---   wp_alloc l as "Hl".
---   wp_let.
---   wp_cmpxchg_fail.
---   wp_proj.
---   wp_if.
---   -- exercise
---   sorry
+theorem cas_spec : ⊢@{IProp GF} WP cas {{ v, ⌜v = hl_val((#5, #7)) ⌝ }} := by
+  unfold cas
+  wp_alloc l with Hl
+  wp_let
+  wp_cmpxchg_fail
+  wp_load
+  wp_cmpxchg_suc
+  wp_load
+  wp_let
+  wp_pures
+  itrivial
 
 -- We finish this section with a final remark about the points-to
 -- predicate. One of its essential properties is that it is not
@@ -286,6 +281,265 @@ theorem pt_not_dupl (l : Loc) (v v' : Val) : l ↦ v ∗ l ↦ v' ⊢ False := b
   simp [DFrac.op_own, DFrac.valid_iff, Rat.add_def] at h
   exact absurd h (by decide)
 
--- PORTING: TODO: Composing Programs and Proofs, Hoare Triples, Concurrency
+-- ## Composing Programs and Proofs
+
+-- Let us use the specification we proved for [prog] in the previous
+-- section to prove a specification for a larger program.
+
+theorem prog_add_2_spec : ⊢@{IProp GF} WP hl(&prog + #2) {{ v, ⌜v = hl_val(#5)⌝ }} := by
+  -- The first part of this program is to evaluate [prog]. We already
+  -- have a specification that tells us how this sub-expression behaves:
+  -- [prog_spec]. To apply it, we must change the goal to match the
+  -- specification. Using the wp-bind rule presented earlier, we can
+  -- focus in on the [prog] expression. Iris provides the tactic
+  -- [wp_bind] for this purpose.
+  wp_bind &prog
+  -- The expression now matches the [prog_spec] specification, but the
+  -- postcondition still does not match. To fix this, we can use
+  -- monotonicity of WP. That is,
+  --
+  --   [WP e {{ Φ }} ∗ (∀ v, Φ v -∗ Ψ v) ⊢ WP e {{ Ψ }}].
+  --
+  -- With this, it suffices to prove that the postcondition of
+  -- [prog_spec] implies the postcondition in our current goal. This is
+  -- achieved with the [wp_wand] lemma, which generates two subgoals, one
+  -- corresponding to [WP e {{ Φ }}] and one to [(∀ v, Φ v -∗ Ψ v)].
+  iapply wp_wand
+  · iapply prog_spec
+  · iintro %v %hv
+    -- PORTING: iris-lean does not support iintro with [→] and [←]
+    rw [hv]
+    wp_pure
+    itrivial
+
+-- The previous proof worked, but it is not very ergonomic. To fix this,
+-- we will make [prog_spec] generic on its postcondition.
+theorem prog_spec_2 (Φ : Val → IProp GF) :
+    (∀ v, ⌜v = hl_val(#3)⌝ -∗ Φ v) -∗ WP prog {{ v, Φ v }} := by
+  iintro hΦ
+  unfold prog
+  wp_alloc l with Hl
+  wp_load
+  wp_store
+  wp_load
+  imodintro
+  iapply hΦ
+  itrivial
+
+-- Now, the other proof becomes simpler.
+theorem prog_add_2_spec' : ⊢@{IProp GF} WP hl(&prog + #2) {{ v, ⌜v = hl_val(#5)⌝ }} := by
+  wp_bind &prog
+  iapply prog_spec_2
+  iintro %v %hv
+  rw [hv]
+  wp_pures
+  itrivial
+
+-- We can even simplify this proof further by using the [wp_apply]
+-- tactic, which automatically applies [wp_bind] for us.
+-- PORTING: iris-lean does not support wp_apply yet
+-- Lemma prog_add_2_spec'' : ⊢ WP prog + #2 {{ v, ⌜v = #5⌝ }}.
+--   wp_apply prog_spec_2.
+--   iIntros "%w ->".
+--   wp_pure.
+--   done.
+-- Qed.
+
+-- ## Hoare Triples
+
+-- Having studied weakest preconditions, we shift our focus onto another
+-- construct for specifying program behaviour: Hoare triples. The weakest
+-- precondition does not explicitly specify which conditions must be met
+-- before executing the program. It only talks about which conditions are
+-- met after – the postcondition. Hoare triples build on weakest
+-- preconditions by requiring us to explicitly mention the conditions
+-- that must hold before running the program – the precondition.
+--
+-- The syntax for Hoare triples is as follows:
+--   [{{{ P }}} e {{{ r0 .. rn, RET v; Q v }}}]
+-- - [P]: the precondition that is assumed to hold before the program runs.
+-- - [e]: the program to run.
+-- - [r0 .. rn]: optional, forall quantified variables used for abstract
+--   return values.
+-- - [v]: the return value.
+-- - [Q]: the postcondition which holds after the program terminates.
+--
+-- In Iris, Hoare triples are actually defined in terms of weakest
+-- preconditions. The definition is as follows:
+--
+--   [□( ∀ Φ, P -∗ ▷ (∀ r0 .. rn, Q -∗ Φ v) -∗ WP e {{v, Φ v }})]
+--
+-- This is quite a lengthy definition, so let us break it down.
+-- Firstly, inspired by the [prog_spec_2] example from the previous
+-- section, this definition makes the postcondition generic.
+-- Next, the precondition [P] implies the generic weakest precondition,
+-- signifying that we must first prove [P] before we can apply the
+-- specification for [e].
+-- Finally, the definition uses two modalities that we have yet to cover.
+-- The persistently modality [□] signifies that the specification can be
+-- freely duplicated, meaning we can reuse Hoare triples.
+-- The later modality [▷] signifies that the program takes at least one
+-- step. The reason for including this is purely technical, and can for
+-- the most part be ignored.
+-- We will get back to both modalities later. For now, let us look at
+-- an example. Consider a function that swaps two values.
+
+
+def swap : Val := hl_val%
+  λ x y,
+  let v := !x;
+  x ← !y;
+  y ← v
+
+-- We will use a Hoare triple to specify this program's behaviour.
+theorem swap_spec (l1 l2 : Loc) (v1 v2 : Val) :
+    ⊢ {{ l1 ↦ v1 ∗ l2 ↦ v2 }}
+      hl(&swap #l1 #l2)
+    {{ RET hl_val(#()); l1 ↦ v2 ∗ l2 ↦ v1 }} := by
+  -- When introducing a Hoare triple, we use the definition above to turn
+  -- the goal into a weakest precondition.
+  iintro %Φ ⟨h1, h2⟩ HΦ
+  unfold swap
+  wp_pures
+  wp_load
+  wp_load
+  wp_store
+  wp_store
+  imodintro
+  iapply HΦ
+  iframe
+
+-- Since Hoare triples are generic in the postcondition `under the hood',
+-- specifications written using Hoare triples can be easily used by
+-- clients, as demonstrated in the previous section. We demonstrate it
+-- here again with a client of [swap].
+theorem swap_swap_spec (l1 l2 : Loc) (v1 v2 : Val) :
+    ⊢ {{ l1 ↦ v1 ∗ l2 ↦ v2 }}
+      hl(&swap #l1 #l2; &swap #l1 #l2)
+    {{ RET hl_val(#()); l1 ↦ v1 ∗ l2 ↦ v2 }} := by
+  iintro %Φ H HΦ
+  wp_bind &swap _ _
+  iapply swap_spec $$ H
+  iintro !> H
+  wp_pures
+  iapply swap_spec $$ H
+  iintro !> H
+  iapply HΦ $$ H
+
+-- A convention in Iris is to write specifications using Hoare triples
+-- but prove them by converting them to weakest preconditions as in the
+-- examples above. There are several reasons for this. Firstly, it
+-- ensures that all specifications are generic in the postcondition.
+-- Secondly, specifications written in terms of Hoare triples are usually
+-- easier to read, as they explicitly name what must be obtained before
+-- the program can be executed. Finally, proving Hoare triples directly
+-- can be quite awkward and burdensome, especially in Coq.
+
+-- ## Concurrency
+
+-- We finish this chapter with a final example that utilises the theory
+-- presented in the previous sections. The example gives a specification
+-- for a concurrent program, which illustrates how ownership of resources
+-- (in particular points-to predicates) can be transferred between
+-- threads. The program is as follows.
+
+def par_client : Exp := hl%
+  let l1 := ref(#0);
+  let l2 := ref(#0);
+  ((l1 ← #21) ‖ (l2 ← #2));
+  let life := !l1 * !l2;
+  (l1, l2, life)
+
+-- The program uses parallel composition (e1 ||| e2) from the [par]
+-- package. Note that the two threads operate on separate locations;
+-- there is no possibility for a data race.
+--
+-- The [par] package provides a specification for parallel composition
+-- called [wp_par]. The specification is as follows.
+--
+-- [[
+-- ∀ (Ψ1 Ψ2 : val → iProp Σ) (e1 e2 : expr) (Φ : val → iProp Σ),
+--   WP e1 {{ Ψ1 }} -∗
+--   WP e2 {{ Ψ2 }} -∗
+--   (∀ v1 v2, (Ψ1 v1) ∗ (Ψ2 v2) -∗ ▷ Φ (v1, v2)) -∗
+--   WP (e1 ||| e2) {{ Φ }}
+-- ]]
+--
+-- Essentially, to prove a weakest precondition of parallel composition
+-- [WP (e1 ||| e2) {{ Φ }}], one must prove a weakest precondition for
+-- each of the threads, [WP e1 {{ Ψ1 }}] and [WP e2 {{ Ψ2 }}], and show
+-- that all pairs of values that satisfy the postconditions [Ψ1] and [Ψ2]
+-- respectively, also satisfy the postcondition of the weakest
+-- precondition we wish to prove [Φ]. Note that the specification uses
+-- the `later' modality [▷]. This is not needed for our current purposes,
+-- so it can safely be ignored. We cover the later modality later.
+
+-- The [wp_par] specification relies on a notion of resources different
+-- from the resource of heaps. The details of the resources are
+-- irrelevant for our example, but we must still assume that [Σ] contains
+-- the resources.
+
+variable [SpawnG GF]
+
+theorem par_client_spec :
+    ⊢ {{ True }}
+      par_client
+    {{ l1 l2 life, RET hl_val((#l1, #l2, &life));
+      l1 ↦ hl_val(#21) ∗ l2 ↦ hl_val(#2) ∗ ⌜life = hl_val(#42)⌝ }} := by
+  iintro %Φ t {t} H
+  unfold par_client
+  -- The program starts by creating two fresh locations, [l1] and [l2].
+  wp_alloc l1 with Hl1
+  wp_let
+  wp_alloc l2 with Hl2
+  wp_let
+  wp_pures
+  -- The specification for [par] requires us to specify the
+  -- postconditions for the two threads. Since the threads return unit,
+  -- the postconditions will just describe the points-to predicates,
+  -- reflecting the writes.
+  let t1_post (_ : Val) : IProp GF := iprop% l1 ↦ hl_val(#21)
+  let t2_post (_ : Val) : IProp GF := iprop% l2 ↦ hl_val(#2)
+  -- We can now apply the [wp_par] specification. Note how we transfer
+  -- ownership of [l1 ↦ #0] to the first thread, and [l2 ↦ #0] to the
+  -- second. This allows each thread to perform its store operation.
+  wp_bind &par _ _
+  iapply wp_par t1_post t2_post $$ [Hl1] [Hl2]
+  -- We must now prove WP specifications for each thread, with the
+  -- postconditions we specified above.
+  · wp_store
+    iframe
+  · wp_store
+    iframe
+  -- Finally, we return to the main thread, and we are allowed to assume
+  -- the postconditions of both threads. Since the postconditions
+  -- mentioned the points-to predicates, these are essentially
+  -- transferred back to the main thread.
+  iintro %v1 %v2 ⟨Hl1, Hl2⟩ !>
+  -- Note: the [wp_par] specification adds a later modality [▷] to the
+  -- goal. This actually strengthens [wp_par], but we do not need that
+  -- strength in this example, so we can simply ignore it. The [▷] can be
+  -- introduced with [iNext].
+  wp_load
+  wp_load
+  wp_pures
+  imodintro
+  iapply H
+  iframe
+  itrivial
+
+-- Food for thought: Imagine a program that has threads operating on the
+-- _same_ location in parallel, akin to the following.
+def race (l : Loc) : Exp := hl% (#l ← #1) ‖ (#l ← #2)
+
+-- Even though the program is non-deterministic, we can still give it a
+-- meaningful specification.
+
+-- theorem race_spec (l : Loc) (v : Val) : ⊢
+--     {{ l ↦ v }} (race l) {{ w, RET w; (l ↦ hl_val(#1)) ∨ (l ↦ hl_val(#2)) }} :=
+--   sorry
+
+-- Could we prove this specification similarly to how we proved
+-- [par_client]?
 
 end specifications
