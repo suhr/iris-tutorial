@@ -247,11 +247,10 @@ def counter (inc : Val) : Exp := hl%
   &inc c;
   !c
 
--- PORTING: TODO: remove that □ in the front of the triple
-theorem counter_spec (inc : Val) : ⊢
+theorem counter_spec (inc : Val) :
     {{
       ∀ (l : Loc) (z : Int),
-        □{{ l ↦ hl_val(#z) }} hl(&inc #l) {{ v, RET v; l ↦ hl_val(#(z + (1 : Int))) }}
+        {{ l ↦ hl_val(#z) }} hl(&inc #l) {{ v, RET v; l ↦ hl_val(#(z + (1 : Int))) }}
     }}
       (counter inc)
     {{ v, RET v; ⌜v = hl_val(#2)⌝ }} := by
@@ -298,7 +297,7 @@ theorem pt_split (l : Loc) (v : Val) :
 -- fraction is owned, i.e. [dq = 1]. However, load operations can occur
 -- for any fraction.
 
--- theorem only_read (l : Loc) (v : Val) : ⊢
+-- theorem only_read (l : Loc) (v : Val) :
 --     {{ l ↦ v }} hl(#l ← #2; !#l; #l ← #3) {{ w, RET w; l ↦ hl_val(#3) }} := by
 --   iintro %Φ Hl HΦ
 --   wp_store
@@ -319,7 +318,7 @@ def par_read_write (l : Loc) : Exp := hl%
   let r := (!#l ‖ !#l);
   #l ← #5
 
-theorem par_read_write_spec [SpawnG GF] (l : Loc) (v : Val) : ⊢
+theorem par_read_write_spec [SpawnG GF] (l : Loc) (v : Val) :
     {{ l ↦ v }}
       (par_read_write l)
     {{ RET hl_val(#()); l ↦ hl_val(#5) }} := by
@@ -392,8 +391,8 @@ def par_read : Exp := hl%
   let r := (!l + #14) ‖ (!l * #3);
   fst(r) + snd(r)
 
-theorem par_read_spec [SpawnG GF] : ⊢@{IProp GF}
-    {{ True }} par_read {{ v, RET v; ⌜v = hl_val(#42)⌝ }} := by
+theorem par_read_spec [SpawnG GF] :
+    {{ (True : IProp GF) }} par_read {{ v, RET v; ⌜v = hl_val(#42)⌝ }} := by
   iintro %Φ x HΦ {x}
   unfold par_read
   -- Both threads have the same postcondition, [t_post].

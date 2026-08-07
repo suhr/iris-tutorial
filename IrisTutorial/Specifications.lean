@@ -393,7 +393,7 @@ def swap : Val := hl_val%
 
 -- We will use a Hoare triple to specify this program's behaviour.
 theorem swap_spec (l1 l2 : Loc) (v1 v2 : Val) :
-    ⊢ {{ l1 ↦ v1 ∗ l2 ↦ v2 }}
+    {{ l1 ↦ v1 ∗ l2 ↦ v2 }}
       hl(&swap #l1 #l2)
     {{ RET hl_val(#()); l1 ↦ v2 ∗ l2 ↦ v1 }} := by
   -- When introducing a Hoare triple, we use the definition above to turn
@@ -414,7 +414,7 @@ theorem swap_spec (l1 l2 : Loc) (v1 v2 : Val) :
 -- clients, as demonstrated in the previous section. We demonstrate it
 -- here again with a client of [swap].
 theorem swap_swap_spec (l1 l2 : Loc) (v1 v2 : Val) :
-    ⊢ {{ l1 ↦ v1 ∗ l2 ↦ v2 }}
+    {{ l1 ↦ v1 ∗ l2 ↦ v2 }}
       hl(&swap #l1 #l2; &swap #l1 #l2)
     {{ RET hl_val(#()); l1 ↦ v1 ∗ l2 ↦ v2 }} := by
   iintro %Φ H HΦ
@@ -482,7 +482,7 @@ def par_client : Exp := hl%
 variable [SpawnG GF]
 
 theorem par_client_spec :
-    ⊢ {{ True }}
+    {{ True }}
       par_client
     {{ l1 l2 life, RET hl_val((#l1, #l2, &life));
       l1 ↦ hl_val(#21) ∗ l2 ↦ hl_val(#2) ∗ ⌜life = hl_val(#42)⌝ }} := by
