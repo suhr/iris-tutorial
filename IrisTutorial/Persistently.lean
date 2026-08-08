@@ -208,7 +208,7 @@ theorem first_is_5 (x : Val) (xs : List Val) :
   -- the hypothesis being destructed, if it is persistent.
   -- PORTING: iris-lean does not support unfolding in icases
   ihave hh := h
-  iunfold MyPredFix in hh
+  iunfold MyPredFix at hh
   icases hh with ⟨hx, _⟩
   iframe #
 
