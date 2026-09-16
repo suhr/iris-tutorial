@@ -7,4 +7,7 @@ import IrisTutorial.Specifications
 import IrisTutorial.Persistently
 import IrisTutorial.LinkedLists
 import IrisTutorial.Later
+import IrisTutorial.Arrays
+import IrisTutorial.GrPredicates
+import IrisTutorial.ResourceAlgebra
 import IrisTutorial.Invariants
