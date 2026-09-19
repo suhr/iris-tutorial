@@ -119,7 +119,7 @@ To get a good understanding of the fundamental concepts of Iris, it is recommend
 
 To work on the exercises, simply edit the files in the IrisTutorial/ folder. Some proofs and definitions are admitted and marked as `(exercise)` --- your task is to fill in those definitions and complete the proofs all the way to 🎉.
 
-After you are done with a file, run make (with your working directory being the repository root, where the Makefile is located) to compile and check the exercises.
+After you are done with a file, run `lake build` (with your working directory being the repository root, where the `lakefile.toml` is located) to compile and check the exercises.
 
 ## Documentation
 
