@@ -192,11 +192,10 @@ theorem sep_comm (P Q: IProp σ): P ∗ Q ⊢ Q ∗ P := by
 -- Writing a wand instead of entailment makes currying more natural. Here
 -- is the Iris version of modus ponens. It is provable using only
 -- [iIntros] and [iApply].
+set_option warn.sorry false in
 theorem modus_ponens (P Q: IProp σ): ⊢ P -∗ (P -∗ Q) -∗ Q := by
-  -- exercise
-  iintro hp pq
-  iapply pq
-  iexact hp
+  -- (exercise)
+  sorry
 
 -- Just as with Coq tactics, Iris allows nesting of introduction
 -- patterns. In fact, like Coq, Iris supports patterns of the form
@@ -205,13 +204,10 @@ theorem modus_ponens (P Q: IProp σ): ⊢ P -∗ (P -∗ Q) -∗ Q := by
 -- Exercise: try to use an introduction with a pattern of parentheses to
 -- prove associativity for [∗]. Note that [∗] is right-associative, so
 -- [P ∗ Q ∗ R] is parsed as [P ∗ (Q ∗ R)].
+set_option warn.sorry false in
 theorem sep_assoc_1 (P Q R : IProp σ) : P ∗ Q ∗ R ⊢ (P ∗ Q) ∗ R := by
-  iintro ⟨hp, hq, hr⟩
-  isplitr [hr]
-  · isplitl [hp]
-    iexact hp
-    iexact hq
-  · iexact hr
+  -- (exercise)
+  sorry
 
 
 -- Manually splitting a separation can become tedious. To alleviate this,
@@ -245,81 +241,62 @@ theorem wand_adj_1 (P Q R : IProp σ) : (P -∗ Q -∗ R) ∗ P ∗ Q ⊢ R := b
 -- Hypotheses that fit arguments exactly can be supplied directly without
 -- a square bracket to avoid trivial subgoals, as in the above. Try this
 -- in the following exercise
+set_option warn.sorry false in
 theorem wand_adj (P Q R : IProp σ) : (P -∗ Q -∗ R) ⊣⊢ (P ∗ Q -∗ R) := by
-  -- isplit does not work for ⊣⊢
-  constructor
-  · iintro pqr ⟨p, q⟩
-    iapply pqr $$ p q
-  · iintro pqr p q
-    iapply pqr
-    iframe
+  -- (exercise)
+  isplit
+  · sorry
+  · sorry
 
 -- Disjunctions [∨] are treated just like disjunctions in Coq. The
 -- introduction pattern [[ _ | _ ]] allows us to eliminate a disjunction,
 -- while the tactics [iLeft] and [iRight] let us introduce them.
 --
 -- Prove that disjunction commutes.
-theorem iris_or_comm (P Q : IProp σ) : Q ∨ P ⊢ P ∨ Q := by
-  iintro h
-  icases h with (hq | hp)
-  · iright
-    iexact hq
-  · ileft
-    iexact hp
+set_option warn.sorry false in
+theorem or_comm (P Q : IProp σ) : Q ∨ P ⊢ P ∨ Q := by
+  -- (exercise)
+  sorry
 
 -- We can even prove the usual elimination rule for or-elimination
 -- written with separation. This version is, however, not very useful, as
 -- it does not allow the two cases to share resources.
+set_option warn.sorry false in
 theorem or_elim (P Q R : IProp σ) : ⊢ (P -∗ R) -∗ (Q -∗ R) -∗ P ∨ Q -∗ R := by
-  iintro pr qr pq
-  icases pq with (hp | hq)
-  · iapply pr
-    iexact hp
-  · iapply qr
-    iexact hq
+  -- (exercise)
+  sorry
 
 -- Separating conjunction distributes over disjunction (for the same
 -- reason as ordinary conjunction).
+set_option warn.sorry false in
 theorem sep_or_distr (P Q R : IProp σ) : P ∗ (Q ∨ R) ⊣⊢ P ∗ Q ∨ P ∗ R := by
-  constructor
-  · iintro ⟨p, qr⟩
-    icases qr with (q | r)
-    · ileft
-      iframe
-    · iright
-      iframe
-  · iintro pqpr
-    icases pqpr with (⟨p, q⟩ | ⟨p, r⟩)
-    · iframe
-    · iframe
+  -- (exercise)
+  sorry
 
 -- Iris has existential and universal quantifiers over any Coq type.
 -- Existential quantifiers are proved using the [iExists] tactic, using
 -- the same syntax as for [exists]. Elimination of existentials is done
 -- through the pattern "[%_ _]" or as part of a "(_&..&_)" with a %
 -- in front of the existential variable.
+set_option warn.sorry false in
 theorem sep_ex_distr {A} (P : IProp σ) (Φ : A → IProp σ) :
     (P ∗ ∃ x, Φ x) ⊣⊢ ∃ x, P ∗ Φ x := by
-  constructor
+  isplit
   · iintro ⟨hp, %x, fx⟩
     iexists x
     iframe
-  · iintro ⟨%x, hp, fx⟩
-    isplitl [hp]
-    · iexact hp
-    · iexists x
-      iexact fx
+  · -- (exercise)
+    sorry
 
 -- Likewise, forall quantification works almost as in Coq. To introduce
 -- universally quantified variables, you can either use [iIntros (x y z)]
 -- or [iIntros "%x %y %z"]. These patterns are interchangeable. To
 -- specify the parameters of hypotheses, we write
 -- [iApply ("H" $! x y z)].
+set_option warn.sorry false in
 theorem sep_all_distr {A} (P Q : A → IProp σ) :
     ⊢ (∀ x, P x) ∗ (∀ x, Q x) -∗ (∀ x, P x ∗ Q x) := by
-  iintro ⟨axp, axq⟩ %x
-  isplitl [axp]
-  · iapply axp
-  · iapply axq
+  -- (exercise)
+  sorry
 
 end proofs

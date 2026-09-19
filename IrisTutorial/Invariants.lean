@@ -21,21 +21,21 @@ def prog : Exp := hl%
 section proofs
 variable [HeapLangGS hlc GF]
 
--- theorem wp_prog :
---     {{ (True : IProp GF) }} prog {{ v, RET v; ⌜v = hl_val(#0)⌝ ∨ ⌜v = hl_val(#1)⌝ }} := by
---   iintro %Φ _ HΦ
---   unfold prog
---   wp_alloc l with Hl
---   wp_pures
---   -- Fork does not have its own tactic. Instead, we use its
---   -- specification. This specification forces us to split our resources
---   -- between the threads.
---   wp_bind fork(_)
---   iapply wp_fork $$ [Hl]
---   -- As such, we must pick a thread to own [l]. But as both threads need
---   -- to access [l], we are stuck.
---   · sorry
---   · sorry
+set_option warn.sorry false in
+theorem wp_prog_fail :
+    {{ (True : IProp GF) }} prog {{ v, RET v; ⌜v = hl_val(#0)⌝ ∨ ⌜v = hl_val(#1)⌝ }} := by
+  iintro %Φ _ HΦ
+  unfold prog
+  wp_alloc l with Hl
+  wp_pures
+  -- Fork does not have its own tactic. Instead, we use its
+  -- specification. This specification forces us to split our resources
+  -- between the threads.
+  wp_apply wp_fork $$ [Hl]
+  -- As such, we must pick a thread to own [l]. But as both threads need
+  -- to access [l], we are stuck.
+  · sorry
+  · sorry
 
 -- ## Introduction to Invariants
 
@@ -87,10 +87,11 @@ theorem inv_persist (N : Namespace) (P : IProp GF) : BI.Persistent (inv N P) :=
 -- [N]. As such, if the goal is a generic proposition, we cannot open any
 -- invariants.
 
--- theorem inv_open_fail (N : Namespace) (P Q : IProp GF) : inv N P ⊢ Q := by
---   iintro Hinv
---   fail_if_success iinv Hinv with HP
---   sorry
+set_option warn.sorry false in
+theorem inv_open_fail (N : Namespace) (P Q : IProp GF) : inv N P ⊢ Q := by
+  iintro Hinv
+  fail_if_success iinv Hinv with HP
+  sorry
 
 -- An example of a goal that has a mask is a weakest precondition. That
 -- is, the shape of a weakest precondition is actually
@@ -115,49 +116,48 @@ theorem inv_persist (N : Namespace) (P : IProp GF) : BI.Persistent (inv N P) :=
 --
 -- Let us try to see these concepts in action with a simple example.
 
--- theorem inv_open_example_attempt_1 (N : Namespace) (l : Loc) :
---     inv N (l ↦ hl_val(#1)) ⊢ WP hl(!#l + !#l) {{ v, ⌜v = hl_val(#2)⌝ }} := by
---   iintro #Hinv
---   -- To prove the WP, we must get access to [l ↦ #1] from the invariant.
---   -- As discussed, to open the invariant, the expression must be atomic.
---   -- Let us ignore this and try to open the invariant anyway.
---   iinv Hinv with Hl
---   -- Iris now asks us to prove that [!#l + !#l] is atomic. Hence we are
---   -- stuck.
---   · sorry
---   · sorry
+set_option warn.sorry false in
+theorem inv_open_example_attempt_1 (N : Namespace) (l : Loc) :
+    inv N (l ↦ hl_val(#1)) ⊢ WP hl(!#l + !#l) {{ v, ⌜v = hl_val(#2)⌝ }} := by
+  iintro #Hinv
+  -- To prove the WP, we must get access to [l ↦ #1] from the invariant.
+  -- As discussed, to open the invariant, the expression must be atomic.
+  -- Let us ignore this and try to open the invariant anyway.
+  iinv Hinv with Hl
+  -- Iris now asks us to prove that [!#l + !#l] is atomic. Hence we are
+  -- stuck.
+  · sorry
+  · sorry
 
--- theorem inv_open_example_attempt_2 (N : Namespace) (l : Loc) :
---     inv N (l ↦ hl_val(#1)) ⊢ WP hl(!#l + !#l) {{ v, ⌜v = hl_val(#2)⌝ }} := by
---   iintro #Hinv
---   -- We now first bind the expression ([!#l]), which _is_ atomic.
---   wp_bind !#l
---   iinv Hinv with Hl
---   · show (nclose N) ⊆ ⊤ ∧ ProgramLogic.Language.Atomic ↑Stuckness.NotStuck hl(!#l)
---     simp
---     exact instAtomicLoad
---   -- This tactic did quite a bit, so let us break it down.
+set_option warn.sorry false in
+theorem inv_open_example_attempt_2 (N : Namespace) (l : Loc) :
+    inv N (l ↦ hl_val(#1)) ⊢ WP hl(!#l + !#l) {{ v, ⌜v = hl_val(#2)⌝ }} := by
+  iintro #Hinv
+  -- We now first bind the expression ([!#l]), which _is_ atomic.
+  wp_bind !#l
+  iinv Hinv with Hl
+  -- This tactic did quite a bit, so let us break it down.
 
---   -- Firstly, notice that we got the points-to predicate from the
---   -- invariant. A small caveat is that we only get the predicate later.
---   -- This is usually not an issue, as the later can be removed in most
---   -- cases, which we discuss in a later chapter.
+  -- Firstly, notice that we got the points-to predicate from the
+  -- invariant. A small caveat is that we only get the predicate later.
+  -- This is usually not an issue, as the later can be removed in most
+  -- cases, which we discuss in a later chapter.
 
---   -- Secondly, the postcondition of the weakest precondition in the goal
---   -- was augmented with [|={⊤ ∖ ↑N}=> ▷ l ↦ #1]. After stepping through
---   -- the current WP, we will have to prove this proposition to show that
---   -- the invariant [l ↦ #1] still holds. The fancy update modality is
---   -- there to stop us from opening the invariant to prove that the
---   -- invariant still holds.
+  -- Secondly, the postcondition of the weakest precondition in the goal
+  -- was augmented with [|={⊤ ∖ ↑N}=> ▷ l ↦ #1]. After stepping through
+  -- the current WP, we will have to prove this proposition to show that
+  -- the invariant [l ↦ #1] still holds. The fancy update modality is
+  -- there to stop us from opening the invariant to prove that the
+  -- invariant still holds.
 
---   -- Thirdly, notice the mask on the weakest precondition: [⊤ ∖ ↑N]. This ensures
---   -- that we cannot open [N] again to prove the WP. If we tried to open
---   -- the invariant again, Iris would ask us to show that [↑N] is a subset
---   -- of [⊤ ∖ ↑N]. For the sake of demonstration, let us try this.
---   iinv Hinv with Hl'
---   -- This is of course impossible to prove, so we are stuck.
---   · sorry
---   · sorry
+  -- Thirdly, notice the mask on the weakest precondition: [⊤ ∖ ↑N]. This ensures
+  -- that we cannot open [N] again to prove the WP. If we tried to open
+  -- the invariant again, Iris would ask us to show that [↑N] is a subset
+  -- of [⊤ ∖ ↑N]. For the sake of demonstration, let us try this.
+  iinv Hinv with Hl'
+  -- This is of course impossible to prove, so we are stuck.
+  · sorry
+  · sorry
 
 theorem inv_open_example (N : Namespace) (l : Loc) :
     inv N (l ↦ hl_val(#1)) ⊢ WP hl(!#l + !#l) {{ v, ⌜v = hl_val(#2)⌝ }} := by
@@ -259,6 +259,7 @@ def N₁ := nroot .@ "prog"
 @[reducible] def prog_inv (l : Loc) : IProp GF := iprop%
   ∃ v, l ↦ some v ∗ (⌜v = hl_val(#0)⌝ ∨ ⌜v = hl_val(#1)⌝)
 
+set_option warn.sorry false in
 theorem wp_prog :
     {{ (True : IProp GF) }} prog {{ v, RET v; ⌜v = hl_val(#0)⌝ ∨ ⌜v = hl_val(#1)⌝ }} := by
   iintro %Φ _ HΦ
@@ -275,19 +276,10 @@ theorem wp_prog :
     itrivial
   -- With the invariant allocated and in the persistent context, we can
   -- use it to prove both threads.
-  wp_bind fork(_)
-  iapply wp_fork $$ [HΦ]
-  · inext
-    wp_pures
-    iinv Hinv with ⟨%v, >Hl, >#Hi⟩
-    wp_load
-    isplitr [HΦ]
-    · iexists v
-      iframe
-      itrivial
-    · iapply HΦ $$ Hi
-  · inext
-    -- As [#l <- #1] is atomic and the mask on the WP is [⊤], we can open the invariant.
+  wp_apply wp_fork $$ [HΦ]
+  · -- (exercise)
+    sorry
+  · -- As [#l <- #1] is atomic and the mask on the WP is [⊤], we can open the invariant.
     iinv Hinv with ⟨%v, >Hl, >#Hi⟩
     -- We use the obtained points-to predicate to prove the WP.
     wp_store
@@ -337,10 +329,8 @@ theorem prog2_spec :
   -- Like before, we allocate the invariant.
   imod inv_alloc N₁ _ (prog2_inv l) $$ [Hl] with #I
   · iexists 0;  iframe
-  wp_bind fork(_)
-  iapply wp_fork $$ [HΦ]
-  · inext
-    wp_pures
+  wp_apply wp_fork $$ [HΦ]
+  · wp_pures
     iinv I with ⟨%i, >Hl⟩
     wp_load
     imodintro
@@ -348,8 +338,7 @@ theorem prog2_spec :
     · iexists i; iframe
     iapply HΦ
     itrivial
-  · inext
-    wp_pure
+  · wp_pure
     -- We use löb induction to accent the recursive calls.
     iloeb as ih
     wp_pures

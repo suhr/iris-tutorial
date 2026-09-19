@@ -71,11 +71,10 @@ theorem not_in_pers_context (P Q : IProp GF) [BI.Persistent P] : P -∗ Q -∗ P
 
 -- Exercise: prove that persistent propositions are duplicable.
 
+set_option warn.sorry false in
 theorem pers_dup (P : IProp GF) [BI.Persistent P] : P ⊢ P ∗ P := by
-  iintro #hp
-  isplitl
-  · iexact hp
-  · iexact hp
+  -- (exercise)
+  sorry
 
 -- Persistent propositions satisfy a lot of nice properties simply by
 -- being duplicable [P ⊢ P ∗ P]. For example, [P ∧ Q] and [P ∗ Q]
@@ -121,6 +120,7 @@ theorem pers_idemp (P : IProp GF) : □ □ P ⊣⊢ □ P := by
 -- the [Persistent] typeclass can automatically identify most persistent
 -- propositions.
 
+set_option warn.sorry false in
 theorem pers_sep (P Q : IProp GF) : □ P ∗ □ Q ⊣⊢ □ (P ∗ Q) := by
   isplit
   · -- The [Persistent] typeclass detects that [□ P ∗ □ Q] is persistent.
@@ -131,8 +131,8 @@ theorem pers_sep (P Q : IProp GF) : □ P ∗ □ Q ⊣⊢ □ (P ∗ Q) := by
     -- persistent context. To make it do so, we must give it the argument
     -- ["#"].
     iframe #
-  · iintro ⟨#hp, #hq⟩
-    iframe #
+  · -- (exercise)
+    sorry
 
 -- Persistency is preserved by quantifications.
 
@@ -247,6 +247,7 @@ def counter (inc : Val) : Exp := hl%
   &inc c;
   !c
 
+set_option warn.sorry false in
 theorem counter_spec (inc : Val) :
     {{
       ∀ (l : Loc) (z : Int),
@@ -254,21 +255,8 @@ theorem counter_spec (inc : Val) :
     }}
       (counter inc)
     {{ v, RET v; ⌜v = hl_val(#2)⌝ }} := by
-  iintro %Φ #H h2
-  unfold counter
-  wp_alloc l with Hl
-  wp_pures
-  wp_bind &inc #l
-  iapply H $$ %l %_ Hl
-  iintro !> %v Hl
-  wp_pures
-  wp_bind &inc #l
-  iapply H $$ %l %_ Hl
-  iintro !> %v Hl
-  wp_load
-  imodintro
-  iapply h2
-  itrivial
+  -- (exercise)
+  sorry
 
 --- ### Persistent Points-to
 
@@ -297,18 +285,19 @@ theorem pt_split (l : Loc) (v : Val) :
 -- fraction is owned, i.e. [dq = 1]. However, load operations can occur
 -- for any fraction.
 
--- theorem only_read (l : Loc) (v : Val) :
---     {{ l ↦ v }} hl(#l ← #2; !#l; #l ← #3) {{ w, RET w; l ↦ hl_val(#3) }} := by
---   iintro %Φ Hl HΦ
---   wp_store
---   -- Throw away half of the points-to predicate.
---   icases Hl with ⟨Hl1, _⟩
---   -- We can still load.
---   wp_load
---   wp_seq
---   -- But we can no longer update the pointer.
---   fail_if_success wp_store
---   sorry
+set_option warn.sorry false in
+theorem only_read (l : Loc) (v : Val) :
+    {{ l ↦ v }} hl(#l ← #2; !#l; #l ← #3) {{ w, RET w; l ↦ hl_val(#3) }} := by
+  iintro %Φ Hl HΦ
+  wp_store
+  -- Throw away half of the points-to predicate.
+  icases Hl with ⟨Hl1, _⟩
+  -- We can still load.
+  wp_load
+  wp_seq
+  -- But we can no longer update the pointer.
+  fail_if_success wp_store
+  sorry
 
 -- Fractional points-to predicates are especially useful in scenarios
 -- where a location is read by multiple threads in parallel but later
@@ -328,8 +317,7 @@ theorem par_read_write_spec [SpawnG GF] (l : Loc) (v : Val) :
   -- assert that both will return their halves afterwards.
   let t_post (w : Val) := iprop(⌜w = v⌝ ∗ l ↦{.own (.half 1)} v)
   wp_pures
-  wp_bind &par _ _
-  iapply wp_par t_post t_post $$ [Hl1] [Hl2]
+  wp_apply wp_par t_post t_post $$ [Hl1] [Hl2]
   -- Each thread has a fraction of the points-to predicate, so both can
   -- perform the load.
   · unfold t_post
@@ -391,31 +379,14 @@ def par_read : Exp := hl%
   let r := (!l + #14) ‖ (!l * #3);
   fst(r) + snd(r)
 
+set_option warn.sorry false in
 theorem par_read_spec [SpawnG GF] :
     {{ (True : IProp GF) }} par_read {{ v, RET v; ⌜v = hl_val(#42)⌝ }} := by
   iintro %Φ x HΦ {x}
   unfold par_read
   -- Both threads have the same postcondition, [t_post].
   let t_post (v : Val): IProp GF := iprop(⌜v = hl_val(#21)⌝)
-  wp_alloc l with Hl
-  imod pointsTo_persist $$ Hl with #Hl
-  wp_pures
-  wp_bind &par _ _
-  iapply wp_par t_post t_post $$ [Hl] [Hl]
-  · wp_load
-    wp_pures
-    imodintro
-    itrivial
-  · wp_load
-    wp_pures
-    imodintro
-    itrivial
-  unfold t_post
-  iintro %v1 %v2 ⟨%hv1, %hv2⟩ !>
-  isimp [hv1, hv2]
-  wp_pures
-  imodintro
-  iapply HΦ
-  itrivial
+  -- (exercise)
+  sorry
 
 end persistently

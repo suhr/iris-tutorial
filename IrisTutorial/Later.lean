@@ -72,10 +72,10 @@ theorem later_sep (P Q : IProp GF) : ▷ (P ∗ Q) ⊣⊢ ▷ P ∗ ▷ Q := by
 -- [∗], the [iNext] tactic can simply ignore hypotheses in the context
 -- that do not have a later on them.
 
+set_option warn.sorry false in
 theorem later_imp (P Q : IProp GF) : P ∗ ▷ (P -∗ Q) -∗ ▷ Q := by
-  iintro ⟨hp, hpq⟩
-  inext
-  iapply hpq $$ hp
+  -- (exercise)
+  sorry
 
 -- ## Tying Later to Program Steps
 

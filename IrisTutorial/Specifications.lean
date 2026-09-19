@@ -137,12 +137,11 @@ def lambda : Exp := hl%
 --
 -- Exercise: prove the following specification for the lambda program.
 
+set_option warn.sorry false in
 theorem lambda_spec : ⊢@{IProp GF} WP lambda {{ v, ⌜v = hl_val(#20)⌝ }} := by
   unfold lambda
-  wp_pures
-  imodintro
-  ipureintro
-  rfl
+  -- (exercise)
+  sorry
 
 -- ## Resources
 --
@@ -256,17 +255,15 @@ def cas : Exp := hl%
 -- [Snd (CmpXchg l v1 v2)]).
 -- Exercise: finish the proof of the specification for [cas].
 
+set_option warn.sorry false in
 theorem cas_spec : ⊢@{IProp GF} WP cas {{ v, ⌜v = hl_val((#5, #7)) ⌝ }} := by
   unfold cas
   wp_alloc l with Hl
   wp_let
   wp_cmpxchg_fail
-  wp_load
-  wp_cmpxchg_suc
-  wp_load
-  wp_let
-  wp_pures
-  itrivial
+  wp_proj
+  -- (exercise)
+  sorry
 
 -- We finish this section with a final remark about the points-to
 -- predicate. One of its essential properties is that it is not
@@ -337,13 +334,12 @@ theorem prog_add_2_spec' : ⊢@{IProp GF} WP hl(&prog + #2) {{ v, ⌜v = hl_val(
 
 -- We can even simplify this proof further by using the [wp_apply]
 -- tactic, which automatically applies [wp_bind] for us.
--- PORTING: iris-lean does not support wp_apply yet
--- Lemma prog_add_2_spec'' : ⊢ WP prog + #2 {{ v, ⌜v = #5⌝ }}.
---   wp_apply prog_spec_2.
---   iIntros "%w ->".
---   wp_pure.
---   done.
--- Qed.
+theorem prog_add_2_spec'' : ⊢@{IProp GF} WP hl(&prog + #2) {{ v, ⌜v = hl_val(#5)⌝ }} := by
+  wp_apply prog_spec_2
+  iintro %v %hv
+  rw [hv]
+  wp_pures
+  itrivial
 
 -- ## Hoare Triples
 
@@ -503,8 +499,7 @@ theorem par_client_spec :
   -- We can now apply the [wp_par] specification. Note how we transfer
   -- ownership of [l1 ↦ #0] to the first thread, and [l2 ↦ #0] to the
   -- second. This allows each thread to perform its store operation.
-  wp_bind &par _ _
-  iapply wp_par t1_post t2_post $$ [Hl1] [Hl2]
+  wp_apply wp_par t1_post t2_post $$ [Hl1] [Hl2]
   -- We must now prove WP specifications for each thread, with the
   -- postconditions we specified above.
   · wp_store
@@ -535,9 +530,10 @@ def race (l : Loc) : Exp := hl% (#l ← #1) ‖ (#l ← #2)
 -- Even though the program is non-deterministic, we can still give it a
 -- meaningful specification.
 
--- theorem race_spec (l : Loc) (v : Val) : ⊢
---     {{ l ↦ v }} (race l) {{ w, RET w; (l ↦ hl_val(#1)) ∨ (l ↦ hl_val(#2)) }} :=
---   sorry
+set_option warn.sorry false in
+theorem race_spec (l : Loc) (v : Val) : ⊢
+    {{ l ↦ v }} (race l) {{ w, RET w; (l ↦ hl_val(#1)) ∨ (l ↦ hl_val(#2)) }} :=
+  sorry
 
 -- Could we prove this specification similarly to how we proved
 -- [par_client]?

@@ -41,6 +41,7 @@ def inc : Val := hl_val%
 -- parametrise the specification not by a list of values, but by a list
 -- of integers. We then map each integer to a HeapLang value using [# _],
 -- allowing us to use the [isList] predicate.
+set_option warn.sorry false in
 theorem inc_spec (l : Val) (xs : List Int) :
     {{ (isList l ((fun x : Int => hl_val(#x)) <$> xs) : IProp GF) }}
       hl(&inc &l)
@@ -56,24 +57,11 @@ theorem inc_spec (l : Val) (xs : List Int) :
     icases Hil with %Hil
     wp_rec
     isimp [Hil]
-    wp_match
-    imodintro
+    wp_pures
     iapply HΦ $$ %Hil
   | cons x xs ih =>
-    iintro %Φ Hil HΦ
-    isimp [Functor.map, List.map_cons, isList] at Hil HΦ
-    icases Hil with ⟨%hd, %l', %hl, hhd, hxs⟩
-    wp_rec
-    isimp [hl]
-    wp_load
-    wp_load
-    wp_store
-    wp_pures
-    iapply ih l' $$ %Φ hxs
-    iintro !> Hl
-    iapply HΦ
-    iexists _, _
-    iframe ∗ %hl
+    -- (exercise)
+    sorry
 
 -- The append function recursively descends [l1], updating the links.
 -- Eventually, it reaches the tail, [NONE], where it will replace it with
@@ -92,40 +80,18 @@ def append : Val := hl_val%
 -- If [l1] and [l2] represent the lists [xs] and [ys] respectively, then
 -- we expect that [append l1 l2] will return a list representing
 -- [xs ++ ys].
+set_option warn.sorry false in
 theorem append_spec (l1 l2 : Val) (xs ys : List Val) :
     {{ (isList l1 xs : IProp GF) ∗ isList l2 ys }}
       hl(&append &l1 &l2)
     {{ l, RET l; isList l (xs ++ ys) }} := by
   induction xs generalizing l1 l2 ys with
   | nil =>
-    iintro %Φ ⟨Hi1, Hi2⟩ HΦ
-    isimp [isList] at Hi1
-    isimp at HΦ
-    icases Hi1 with %Hi1
-    unfold append
-    isimp [Hi1]
-    wp_pures
-    imodintro
-    iapply HΦ $$ Hi2
+    -- (exercise)
+    sorry
   | cons x xs ih =>
-    iintro %Φ ⟨Hi1, Hi2⟩ HΦ
-    isimp [isList] at Hi1 HΦ
-    icases Hi1 with ⟨%hd, %l, %Hl1, Hhd, Hil⟩
-    wp_rec
-    isimp [Hl1]
-    wp_load
-    wp_load
-    wp_pures
-    wp_bind &append _ _
-    iapply ih _ _ ys $$ [$]
-    iintro !> %l' Hil'
-    wp_store
-    wp_pures
-    imodintro
-    iapply HΦ
-    iexists hd, l'
-    iframe
-    itrivial
+    -- (exercise)
+    sorry
 
 -- We will implement reverse using a helper function called
 -- [reverse_append], which takes two arguments, [l] and [acc], and
@@ -145,54 +111,28 @@ def reverseAppend : Val := hl_val%
 def reverse : Val := hl_val%
   λl, &reverseAppend l (none())
 
+set_option warn.sorry false in
 theorem reverse_append_spec (l acc : Val) (xs ys : List Val) :
     {{ (isList l xs : IProp GF) ∗ isList acc ys }}
       hl(&reverseAppend &l &acc)
     {{ v, RET v; isList v (xs.reverse ++ ys) }} := by
   induction xs generalizing l acc ys with
   | nil =>
-    simp only [List.reverse_nil, List.nil_append, isList]
-    iintro %Φ ⟨%Hll, Hla⟩ HΦ
-    wp_rec
-    isimp [Hll]
-    wp_pures
-    imodintro
-    iapply HΦ $$ Hla
+    -- (exercise)
+    sorry
   | cons x xs ih =>
-    simp only [List.reverse_cons, List.append_assoc, List.cons_append, List.nil_append, isList]
-    iintro %Φ ⟨⟨%hd, %l', %Hl, Hhd, Hll'⟩, H⟩ HΦ
-    wp_rec
-    isimp [Hl]
-    wp_pures
-    wp_load
-    wp_load
-    wp_store
-    wp_pures
-    iapply ih l' _ (x::ys) $$ [Hll' Hhd H]
-    · iframe
-      ieval (unfold isList)
-      iexists hd, acc
-      iframe
-      ipureintro
-      rfl
-    · imodintro
-      iexact HΦ
+    -- (exercise)
+    sorry
 
 -- Now, we use the specification of [reverse_append] to prove the
 -- specification of [reverse].
+set_option warn.sorry false in
 theorem reverse_spec (l : Val) (xs : List Val) :
     {{ (isList l xs : IProp GF) }}
       hl(&reverse &l)
     {{ v, RET v; isList v xs.reverse }} := by
-  unfold reverse
-  iintro %Φ Hll HΦ
-  wp_pures
-  iapply reverse_append_spec _ _ xs [] $$ [Hll]
-  · iframe
-    iunfold isList
-    itrivial
-  · isimp
-    iframe
+  -- (exercise)
+    sorry
 
 -- The specifications thus far have been rather straightforward. Now we
 -- will show a very general specification for [fold_right].
@@ -232,6 +172,7 @@ def foldRight : Val := hl_val%
 -- Note that Hoare triples are persistent, and persistent predicates are
 -- closed under universal quantification. Hence, in the proof, the
 -- assumption for [f] will move into the persistent context.
+set_option warn.sorry false in
 theorem fold_right_spec (P : Val → IProp GF) (I : List Val → Val → IProp GF)
     (f a l : Val) (xs : List Val) :
     {{
@@ -244,31 +185,12 @@ theorem fold_right_spec (P : Val → IProp GF) (I : List Val → Val → IProp G
   induction xs generalizing a l with
   | nil =>
     simp [isList]
-    iintro %Φ ⟨%Hl, e, HI, HP⟩ HΦ {e}
-    iunfold foldRight
-    isimp [Hl]
-    wp_pures
-    imodintro
-    iapply HΦ
-    iframe HI %Hl
+    -- (exercise)
+    sorry
   | cons x xs ih =>
     simp [isList]
-    iintro %Φ ⟨⟨%hd, %l', %Hl, Hhd, Hll'⟩, ⟨HPx, HPxs⟩, HI, #HPI⟩ HΦ
-    wp_rec
-    isimp [Hl]
-    wp_load
-    wp_load
-    wp_pures
-    wp_bind &foldRight _ _ _
-    iapply ih $$ [HI HPxs Hll' HPI]
-    · iframe
-      iapply HPI
-    · iintro !> %r' ⟨Hll', HI⟩
-      iapply HPI $$ %_ %_ %xs [$]
-      iintro !> %r HI
-      iapply HΦ
-      iframe
-      itrivial
+    -- (exercise)
+    sorry
 
 -- We can now sum over a list simply by folding an addition function over
 -- it.

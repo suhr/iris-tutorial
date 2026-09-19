@@ -82,13 +82,14 @@ theorem abstr_not_pure (P : IProp σ) : ⊢ P -∗ ⌜8 = 8⌝ := by
 -- [⌜_⌝] turns Coq propositions into Iris propositions, while [⊢ _] turns
 -- Iris propositions into Coq propositions. These operations are not
 -- inverses, but they are related.
+set_option warn.sorry false in
 theorem pure_adj1 (φ : Prop) : φ → ⊢ (⌜φ⌝ : IProp σ) := by
-  intro h
-  ipureintro
-  exact h
+  -- (exercise)
+  sorry
 
+set_option warn.sorry false in
 theorem pure_adj2 (P : IProp σ) : ⊢ ⌜⊢ P⌝ -∗ P := by
-  iintro %h
-  exact h
+  -- (exercise)
+  sorry
 
 end proofs
