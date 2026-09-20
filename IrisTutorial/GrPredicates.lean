@@ -72,7 +72,7 @@ def is_list_pre (Φ : Val → IProp GF) (f : Val → IProp GF) (v : Val) : IProp
 instance is_list_pre_mono (Φ : Val → IProp GF) :
     BIMonoPred (is_list_pre Φ) := by
   refine BIMonoPred.mk ?_ ?_
-  · iintro %Ψ1 %Ψ2 %_ %_ #H1 %x H2
+  · iintro %Ψ1 %Ψ2 %- %- #H1 %x H2
     unfold is_list_pre
     icases H2 with (H | ⟨%l, Hx, ⟨%x', %t, Hl, HΦx, HΨ⟩⟩)
     · ileft; iframe

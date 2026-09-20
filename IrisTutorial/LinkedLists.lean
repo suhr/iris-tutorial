@@ -51,14 +51,12 @@ theorem inc_spec (l : Val) (xs : List Int) :
   -- hypothesis.
   induction xs generalizing l with
   | nil =>
-    -- PORTING: iris-lean does not support iintro with [→] and [←]
     iintro %Φ Hil HΦ
     isimp [Functor.map, List.map_nil, isList] at Hil HΦ
-    icases Hil with %Hil
+    icases Hil with %rfl
     wp_rec
-    isimp [Hil]
     wp_pures
-    iapply HΦ $$ %Hil
+    iapply HΦ $$ %rfl
   | cons x xs ih =>
     -- (exercise)
     sorry
@@ -217,7 +215,7 @@ theorem sum_list_spec (l : Val) (xs : List Int) :
     · unfold P
       simp [Functor.map, BI.BigSepL.bigSepL_map]
       iapply BI.BigSepL.bigSepL_intro (P := iprop% □True)
-      · iintro %_ %x %_ _
+      · iintro %- %x %- -
         iexists x
         itrivial
       · itrivial

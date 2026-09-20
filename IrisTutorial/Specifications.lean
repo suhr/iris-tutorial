@@ -303,9 +303,7 @@ theorem prog_add_2_spec : ⊢@{IProp GF} WP hl(&prog + #2) {{ v, ⌜v = hl_val(#
   -- corresponding to [WP e {{ Φ }}] and one to [(∀ v, Φ v -∗ Ψ v)].
   iapply wp_wand
   · iapply prog_spec
-  · iintro %v %hv
-    -- PORTING: iris-lean does not support iintro with [→] and [←]
-    rw [hv]
+  · iintro %v %rfl
     wp_pure
     itrivial
 

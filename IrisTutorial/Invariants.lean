@@ -24,7 +24,7 @@ variable [HeapLangGS hlc GF]
 set_option warn.sorry false in
 theorem wp_prog_fail :
     {{ (True : IProp GF) }} prog {{ v, RET v; ⌜v = hl_val(#0)⌝ ∨ ⌜v = hl_val(#1)⌝ }} := by
-  iintro %Φ _ HΦ
+  iintro %Φ - HΦ
   unfold prog
   wp_alloc l with Hl
   wp_pures
@@ -224,7 +224,7 @@ def N := nroot .@ "myNamespace"
 
 theorem inv_alloc_loc :
     {{ True }} hl(ref(#0)) {{(l : Loc), RET hl_val(#l); inv N (l ↦ hl_val(#0))}} := by
-  iintro %Φ _ HΦ
+  iintro %Φ - HΦ
   wp_alloc l with Hl
   -- We now wish to allocate the invariant using [inv_alloc]. To strip
   -- the fancy update modality immediately, we use the [iMod] tactic.
@@ -262,7 +262,7 @@ def N₁ := nroot .@ "prog"
 set_option warn.sorry false in
 theorem wp_prog :
     {{ (True : IProp GF) }} prog {{ v, RET v; ⌜v = hl_val(#0)⌝ ∨ ⌜v = hl_val(#1)⌝ }} := by
-  iintro %Φ _ HΦ
+  iintro %Φ - HΦ
   unfold prog
   wp_alloc l with Hl
   wp_pures
@@ -322,7 +322,7 @@ def N₂ := nroot .@ "prog2"
 
 theorem prog2_spec :
     {{ (True : IProp GF) }} prog2 {{ (i : Int), RET hl_val(#i); True }} := by
-  iintro %Φ _ HΦ
+  iintro %Φ - HΦ
   unfold prog2
   wp_alloc l with Hl
   wp_pures
@@ -363,6 +363,5 @@ theorem prog2_spec :
     · iexists i + 1; iframe
     wp_pure;  wp_pure
     iapply ih
-    itrivial
 
 end proofs
