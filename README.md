@@ -39,11 +39,11 @@ Here are ported chapters:
 - [gr_predicates](/IrisTutorial/GrPredicates.lean) - Guarded Recursive Predicates (TODO: not actually guarded fixpoints, only least)
 - [resource_algebra](/IrisTutorial/ResourceAlgebra.lean) - Introduction to resource algebras
 - [invariants](/IrisTutorial/Invariants.lean) - Invariants
+- [timeless](/IrisTutorial/Timeless.lean) - Timeless propositions
+- [structured_conc](/IrisTutorial/StructuredConc.lean) - Introducing the spawn and par constructs
 
 And these chapters are yet to be ported:
 
-- [timeless](/IrisTutorial/Timeless.lean) - Timeless propositions
-- [structured_conc](/IrisTutorial/StructuredConc.lean) - Introducing the spawn and par constructs
 - [counter](/IrisTutorial/Counter.lean) - The authoritative camera
 - [spin_lock](/IrisTutorial/SpinLock.lean) - Specification of a spin lock
 - [ticket_lock](/IrisTutorial/TicketLock.lean) - Specification of a ticket lock
